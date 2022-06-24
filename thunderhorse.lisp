@@ -42,7 +42,14 @@
 
 (defun heading-title (h s)
   (loop for c = (read-char s nil :eof)
-        until (eq c )))
+        for n = (peek-char nil s nil :eof)
+        for v = (make-array 0 :adjustable t :fill-pointer 0)
+        until (eq c #\Newline)
+        if (and (char= c #\:)
+                (char/= n #\space))
+          do (heading-tag h s v)
+        else
+          do (vector-push-extend c v)))
 
 (defun heading-todo (h s)
   (let ((input
