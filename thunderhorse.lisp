@@ -80,48 +80,71 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; heading methods
 
+(defun heading-parent (h pos doc)
+  (cond
+    ((= 1 (depth h))
+     (setf (parent h) doc))
+    ((> (depth h) (depth pos))
+     (vector-push-extend h (children pos)))
+    ((> (depth pos) (depth h))
+     (vector-push-extend (children pos) h))))
+
+(defgeneric parse-heading (obj doc)
+  (:documentation "Special parser for heading"))
+
+(defmethod parse-heading :after ((obj heading) (doc doc-raw))
+  (with-slots (node) doc
+    (unless (eq obj node)
+      (setf node obj))))
+
+(defmethod parse-heading ((obj stream) (doc doc-raw)))
+
+(defmethod parse-heading ((obj todo) (doc doc-raw))
+  (with-slots (parent) obj
+    (with-slots (final) doc
+      (let ((todo? (remove-if-not
+                    (lambda (x) (search x (title parent)))
+                    (todo-vals final))))
+        (when todo?
+          (setf (todo parent) obj)
+          (setf (title parent)
+                (string-trim (car todo?) (title parent)))
+          (vector-push-extend obj (todos final)))))))
+
+(defmethod parse-heading ((obj heading) (doc doc-raw))
+  (parse-heading (make-instance 'todo :parent obj) doc)
+  ;;(with-slots (title depth todo) obj
+  ;;  (let ((todo? (or (search "TODO" title)
+  ;;                   (search "DONE" title))))
+  ;;    (if todo?
+  ;;        (progn
+  ;;          (setf )))))
+
+  ;;(with-slots (str final node) doc
+  ;;  (heading-depth obj str)
+  ;;  (if (null node)
+  ;;      (progn
+  ;;        (setf node obj)
+  ;;        (setf (parent obj) final)
+  ;;        (vector-push-extend obj (headings final)))
+  ;;      (heading-parent obj node final))
+  ;;  (parse-heading str doc))
+  )
+
 (defmethod parse :after ((obj heading) (doc doc-raw))
   (parse (str doc) doc))
 
-(defun heading-title (h s)
-  (loop for c = (read-char s nil :eof)
-        for n = (peek-char nil s nil :eof)
-        for v = (make-array 0 :adjustable t :fill-pointer 0)
-        until (eq c #\Newline)
-        if (and (char= c #\:)
-                (char/= n #\space))
-          do (heading-tag h s v)
-        else
-          do (vector-push-extend c v)))
-
-(defun heading-todo (h s)
-  (let ((input
-          (loop for c = (read-char s nil :eof)
-                for v = (make-array 0 :adjustable t :fill-pointer 0)
-                until (eq c #\Space)
-                do (vector-push-extend c v)
-                finally (return v))))
-    (if (every #'upper-case-p input)
-        (setf (todo h) (concatenate 'string input))
-        (setf (title h) input)))
-  (heading-title h s))
-
-(defun heading-depth (h s)
-  (loop for c = (read-char s nil :eof)
-        until (eq c #\Space)
-        do (incf (depth h)))
-  (heading-todo h s))
-
-(defun heading-parser (h s)
-  (heading-depth h s))
-
 (defmethod parse ((obj heading) (doc doc-raw))
-  (with-slots (final) doc
-    (vector-push-extend obj (headings final)))
-  (heading-parser obj (str doc))
-  (loop for c = (read-char (str doc) nil :eof)
-        until (eq c #\Space)
-          do (incf (depth obj))))
+  (with-slots (title depth) obj
+    (let* ((line (read-line (str doc) nil :eof))
+           (head (search "* " line)))
+      (if head
+          (progn
+            (setf depth (1+ head))
+            (setf title (subseq line (1+ (1+ depth))))
+            (parse-heading obj doc))
+          (parse (make-instance 'section :body line)
+                 doc)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -132,7 +155,8 @@
   (loop for c = (read-char obj nil :eof)
         until (eq c :eof)
         when (assoc c *dispatch*)
-          do (parse (make-instance (cdr (assoc c *dispatch*)))
+          do (setf (pos doc) (file-position obj))
+             (parse (make-instance 'heading)
                     doc)
         finally (return (final doc))))
 
