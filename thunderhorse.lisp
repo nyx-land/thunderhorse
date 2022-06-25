@@ -1,28 +1,71 @@
 (defparameter *test-file* #P"~/docs/org-sync/blogs/unlife.org ")
-
+(defparameter *test-str* (format nil "* foo~%** bar"))
 (defparameter *dispatch* '((#\* . heading)))
 
 (defclass doc ()
   ((headings
     :initarg :headings
     :initform (make-array 0 :adjustable t :fill-pointer 0)
-    :accessor headings)))
+    :accessor headings)
+   (todo-vals
+    :initarg :todo-vals
+    :initform '("TODO" "DONE")
+    :accessor todo-vals)
+   (todos
+    :initarg :todos
+    :initform (make-array 0 :adjustable t :fill-pointer 0)
+    :accessor todos)
+   (tags
+    :initarg :tags
+    :initform nil
+    :accessor tags)))
 
 (defclass doc-raw ()
   ((file  :initarg :file                                 :accessor file)
    (str   :initarg :str                                  :accessor str)
-   (pos   :initarg :pos                                  :accessor pos)
-   (node  :initarg :node                                 :accessor node)
+   (pos   :initarg :pos   :initform nil                  :accessor pos)
+   (node  :initarg :node  :initform nil                  :accessor node)
    (final :initarg :final :initform (make-instance 'doc) :accessor final)))
 
+(defclass tag ()
+  ((name  :initarg :name  :accessor name)
+   (index :initarg :index :accessor index)))
+
+(defclass todo ()
+  ((state  :initarg :state  :accessor state)
+   (parent :initarg :parent :accessor parent)))
+
+(defclass section ()
+  ((body :initarg :body :accessor body)))
+
 (defclass heading ()
-  ((depth      :initarg :depth      :initform 1   :accessor depth)
-   (todo       :initarg :todo       :initform nil :accessor todo)
-   (title      :initarg :title      :initform nil :accessor title)
-   (properties :initarg :properties :initform nil :accessor properties)
-   (parent     :initarg :parent     :initform nil :accessor parent)
-   (children   :initarg :children   :initform nil :accessor children)
-   (paragraphs :initarg :paragraphs :initform nil :accessor paragraphs)))
+  ((depth
+    :initarg :depth
+    :initform 1
+    :accessor depth)
+   (todo
+    :initarg :todo
+    :initform nil :accessor todo)
+   (title
+    :initarg :title
+    :initform (make-array 0 :adjustable t :fill-pointer 0)
+    :accessor title)
+   (properties
+    :initarg :properties
+    :initform nil
+    :accessor properties)
+   (parent
+    :initarg :parent
+    :initform nil
+    :accessor parent)
+   (children
+    :initarg :children
+    :initform (make-array 0 :adjustable t :fill-pointer 0)
+    :accessor children)
+   (paragraphs
+    :initarg :paragraphs
+    :initform nil
+    :accessor paragraphs)))
 
 (defclass property ()
   ((entries :initarg :entries :initform nil :accessor entries)))
