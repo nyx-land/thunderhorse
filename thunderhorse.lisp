@@ -135,15 +135,15 @@
 (defun tag-split (tags heading doc)
   (with-slots (title) heading
     (loop for i = 0 then (incf j)
-        as j = (position #\: tags :start i)
-        unless (equalp (subseq tags i j) "")
-          collect (parse-heading
-                   (make-instance
-                    'tag
-                    :name (subseq tags i j)
-                    :index (list (cons title heading)))
-                   doc)
-        while j)))
+          as j = (position #\: tags :start i)
+          unless (equalp (subseq tags i j) "")
+            collect (parse-heading
+                     (make-instance
+                      'tag
+                      :name (subseq tags i j)
+                      :index (list (cons title heading)))
+                     doc)
+          while j)))
 
 (defun parse-heading-tags (title heading doc)
   (let* ((tag-index
