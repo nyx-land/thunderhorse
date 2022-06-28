@@ -94,26 +94,76 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; heading methods
+;;;; lesser element methods
 
-(defun heading-parent (h pos doc)
-  (cond
-    ((= 1 (depth h))
-     (setf (parent h) doc))
-    ((> (depth h) (depth pos))
-     (vector-push-extend h (children pos)))
-    ((> (depth pos) (depth h))
-     (vector-push-extend (children pos) h))))
+(defmethod parse ((obj section) (doc doc-raw))
+  (princ (read-line (str doc) nil :eof)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; greater element methods
+
+(defmethod parse ((obj drawer) (doc doc-raw))
+  (loop for line = (read-line (str doc) nil :eof)
+        for ksearch = (search ": " line)
+        for k = (subseq line 0 ksearch)
+        for v = (subseq line (1+ ksearch))
+        until (search ":END:" line :test #'char-equal)
+        collect (cons k v) into e
+        finally (push e (entries obj))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; heading methods
 
 (defgeneric parse-heading (obj doc)
   (:documentation "Special parser for heading"))
 
-(defmethod parse-heading :after ((obj heading) (doc doc-raw))
-  (with-slots (node) doc
-    (unless (eq obj node)
-      (setf node obj))))
+(defmethod parse-heading ((obj tag) (doc doc))
+  (push obj (tags (cdr (car (index obj)))))
+  (with-slots (name) obj
+    (let ((tag? (gethash name (tags doc)))
+          (head (car (car (index obj)))))
+      (if tag?
+          (when (null (assoc head (index tag?) :test #'equalp))
+            (push (car (index obj)) (index tag?)))
+          (setf (gethash name (tags doc)) obj)))))
 
-(defmethod parse-heading ((obj stream) (doc doc-raw)))
+(defun tag-split (tags heading doc)
+  (with-slots (title) heading
+    (loop for i = 0 then (incf j)
+        as j = (position #\: tags :start i)
+        unless (equalp (subseq tags i j) "")
+          collect (parse-heading
+                   (make-instance
+                    'tag
+                    :name (subseq tags i j)
+                    :index (list (cons title heading)))
+                   doc)
+        while j)))
+
+(defun parse-heading-tags (title heading doc)
+  (let* ((tag-index
+           (loop for c across (reverse title)
+                 for n = (1- (length title)) then (decf n)
+                 until (char= c #\space)
+                 finally (return (1+ n))))
+         (tags (subseq title tag-index)))
+    (setf (title heading) (subseq title 0 tag-index))
+    (tag-split tags heading doc)))
+
+(defun parse-heading-priority (todo title doc)
+  (let ((priority? (remove-if-not
+                    (lambda (x) (search x title))
+                    (priority-vals doc))))
+    (when priority?
+      (setf (priority todo)
+            (car priority?))
+      (setf (title (parent todo))
+            (string-trim (format nil " ~a" (car priority?)) title)))))
 
 (defmethod parse-heading ((obj todo) (doc doc-raw))
   (with-slots (parent) obj
@@ -125,27 +175,44 @@
           (setf (todo parent) obj)
           (setf (title parent)
                 (string-trim (car todo?) (title parent)))
-          (vector-push-extend obj (todos final)))))))
+          (setf (state obj) (car todo?))
+          (vector-push-extend obj (todos final))
+          (parse-heading-priority obj (title parent) final))))))
+
+(defun parse-heading-parent (head doc)
+  (with-slots (node final) doc
+    (unless (eq node head)
+      (cond
+        ((= 1 (depth head))
+         (setf (parent head) final)
+         (vector-push-extend head (headings final)))
+        ((> (depth head) (depth node))
+         (vector-push-extend head (children node)))
+        ((> (depth node) (depth head))
+         (vector-push-extend (children node) head))))))
+
+(defmethod parse-heading :before ((obj heading) (doc doc-raw))
+  (with-slots (node final) doc
+    (when (null node)
+      (setf node obj)
+      (setf (parent obj) final)
+      (vector-push-extend obj (headings final)))))
 
 (defmethod parse-heading ((obj heading) (doc doc-raw))
+  (parse-heading-parent obj doc)
   (parse-heading (make-instance 'todo :parent obj) doc)
-  ;;(with-slots (title depth todo) obj
-  ;;  (let ((todo? (or (search "TODO" title)
-  ;;                   (search "DONE" title))))
-  ;;    (if todo?
-  ;;        (progn
-  ;;          (setf )))))
+  (with-slots (title) obj
+    (when (char= (aref title (1- (length title))) #\:)
+      (parse-heading-tags title obj (final doc))))
+  (let ((line (read-line (str doc) nil :eof)))
+    (unless (eq :eof line)
+      (when (search ":PROPERTIES:" line :test #'char-equal)
+        (parse (make-instance 'propdrawer :parent obj) doc)))))
 
-  ;;(with-slots (str final node) doc
-  ;;  (heading-depth obj str)
-  ;;  (if (null node)
-  ;;      (progn
-  ;;        (setf node obj)
-  ;;        (setf (parent obj) final)
-  ;;        (vector-push-extend obj (headings final)))
-  ;;      (heading-parent obj node final))
-  ;;  (parse-heading str doc))
-  )
+(defmethod parse-heading :after ((obj heading) (doc doc-raw))
+  (with-slots (node) doc
+    (unless (eq obj node)
+      (setf node obj))))
 
 (defmethod parse :after ((obj heading) (doc doc-raw))
   (parse (str doc) doc))
@@ -157,7 +224,7 @@
       (if head
           (progn
             (setf depth (1+ head))
-            (setf title (subseq line (1+ (1+ depth))))
+            (setf title (subseq line (1+ depth)))
             (parse-heading obj doc))
           (parse (make-instance 'section :body line)
                  doc)))))
