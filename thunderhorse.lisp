@@ -1,5 +1,5 @@
 (defparameter *test-file* #P"~/docs/org-sync/blogs/unlife.org ")
-(defparameter *test-str* (format nil "* foo~%** bar"))
+(defparameter *test-str* (format nil "* TODO [#A] heading"))
 (defparameter *dispatch* '((#\* . heading)))
 
 (defclass doc ()
