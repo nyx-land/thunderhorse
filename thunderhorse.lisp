@@ -11,13 +11,18 @@
     :initarg :todo-vals
     :initform '("TODO" "DONE")
     :accessor todo-vals)
+   (priority-vals
+    :initarg :priority-vals
+    :initform (mapcar (lambda (x) (format nil "[#~a]" x))
+                      '("A" "B" "C"))
+    :accessor priority-vals)
    (todos
     :initarg :todos
     :initform (make-array 0 :adjustable t :fill-pointer 0)
     :accessor todos)
    (tags
     :initarg :tags
-    :initform nil
+    :initform (make-hash-table :test #'equalp)
     :accessor tags)))
 
 (defclass doc-raw ()
@@ -31,9 +36,13 @@
   ((name  :initarg :name  :accessor name)
    (index :initarg :index :accessor index)))
 
-(defclass todo ()
+(defclass head-meta ()
   ((state  :initarg :state  :accessor state)
    (parent :initarg :parent :accessor parent)))
+
+(defclass todo (head-meta)
+  ((priority
+    :initarg :priority :accessor priority)))
 
 (defclass section ()
   ((body :initarg :body :accessor body)))
@@ -65,10 +74,17 @@
    (paragraphs
     :initarg :paragraphs
     :initform nil
-    :accessor paragraphs)))
+    :accessor paragraphs)
+   (tags
+    :initarg :tags
+    :initform nil
+    :accessor tags)))
 
-(defclass property ()
-  ((entries :initarg :entries :initform nil :accessor entries)))
+(defclass drawer ()
+  ((entries :initarg :entries :initform nil :accessor entries)
+   (parent  :initarg :parent :accessor parent)))
+
+(defclass propdrawer (drawer) ())
 
 (defclass paragraph () ())
 
