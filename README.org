@@ -25,7 +25,7 @@ as long as it works since GNU Emacs doesn't set a very high bar to begin with.
 
 ** Compliance
 
-- [-] Orgdown-1
+- [-] Orgdown-1 [33%]
   - [X] Basic headings
   - [ ] Greater Elements
     - [ ] Tables
@@ -36,7 +36,7 @@ as long as it works since GNU Emacs doesn't set a very high bar to begin with.
     - [ ] Inline text markup (bold, italics, etc)
     - [ ] Links
     - [ ] Comments
-- [-] Orgdown-?2
+- [-] Orgdown-?2 [33%]
   - [X] Heading metadata
     - [X] Todo states
     - [X] Priorities
@@ -44,6 +44,7 @@ as long as it works since GNU Emacs doesn't set a very high bar to begin with.
   - [-] Greater Elements
     - [-] Drawers
     - [ ] Block metadata
+  - [ ] To be determined
 
 ** Naming
 
