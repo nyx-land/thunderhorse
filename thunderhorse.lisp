@@ -1,6 +1,7 @@
-(defparameter *test-file* #P"~/docs/org-sync/blogs/unlife.org ")
-(defparameter *test-str* (format nil "* TODO [#A] heading"))
-(defparameter *dispatch* '((#\* . heading)))
+(defpackage #:thunderhorse
+  (:nickname #:trhs)
+  (:use :cl)
+  (:export :parse))
 
 (defclass doc ()
   ((headings
