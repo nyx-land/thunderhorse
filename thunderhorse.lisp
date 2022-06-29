@@ -167,7 +167,7 @@
                     (priority-vals doc))))
     (when priority?
       (setf (priority todo)
-            (car priority?))
+            (aref (car priority?) 2))
       (setf (title (parent todo))
             (string-trim (format nil " ~a" (car priority?)) title)))))
 
@@ -195,7 +195,8 @@
         ((> (depth head) (depth node))
          (vector-push-extend head (children node)))
         ((> (depth node) (depth head))
-         (vector-push-extend (children node) head))))))
+         (vector-push-extend (children node) head)
+         (setf (parent head) node))))))
 
 (defmethod parse-heading :before ((obj heading) (doc doc-raw))
   (with-slots (node final) doc
