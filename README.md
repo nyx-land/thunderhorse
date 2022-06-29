@@ -17,3 +17,7 @@ that matter.
 There are two Org-Mode parsers for CL currently. Both are incomplete and for
 different reasons it seemed more productive to just implement one myself instead
 of trying to figure out how to finish the other two.
+
+## License
+
+ISC. Do whatever you want with it, just make sure to credit me.
