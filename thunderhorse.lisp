@@ -43,8 +43,13 @@
     :initarg :priority :accessor priority)))
 
 (defclass section ()
-  ((body   :initarg :body :accessor body)
-   (parent :initarg :parent :accessor parent)))
+  ((body
+    :initarg :body
+    :initform (make-array 0 :adjustable t :fill-pointer 0)
+    :accessor body)
+   (parent
+    :initarg :parent
+    :accessor parent)))
 
 (defclass heading ()
   ((depth
@@ -85,7 +90,9 @@
 
 (defclass propdrawer (drawer) ())
 
-(defclass paragraph (section) ())
+(defclass paragraph (section)
+  ((body
+    :initform (make-string 0))))
 
 (defgeneric parse (obj doc)
   (:documentation "The parser method"))
