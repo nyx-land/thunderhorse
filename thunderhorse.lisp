@@ -204,36 +204,32 @@
       (setf (parent obj) final)
       (vector-push-extend obj (headings final)))))
 
+(defmethod parse-heading :after ((obj heading) (doc doc-raw))
+  (with-slots (node) doc
+    (unless (eq obj node)
+      (setf node obj))))
+
 (defmethod parse-heading ((obj heading) (doc doc-raw))
   (parse-heading-parent obj doc)
   (parse-heading (make-instance 'todo :parent obj) doc)
   (with-slots (title) obj
     (when (char= (aref title (1- (length title))) #\:)
       (parse-heading-tags title obj (final doc))))
-  (let ((line (read-line (str doc) nil :eof)))
-    (unless (eq :eof line)
-      (when (search ":PROPERTIES:" line :test #'char-equal)
-        (parse (make-instance 'propdrawer :parent obj) doc)))))
-
-(defmethod parse-heading :after ((obj heading) (doc doc-raw))
-  (with-slots (node) doc
-    (unless (eq obj node)
-      (setf node obj))))
-
-(defmethod parse :after ((obj heading) (doc doc-raw))
-  (parse (str doc) doc))
+  (parse (make-instance 'section :parent obj) doc))
 
 (defmethod parse ((obj heading) (doc doc-raw))
   (with-slots (title depth) obj
     (let* ((line (read-line (str doc) nil :eof))
            (head (search "* " line)))
-      (if head
-          (progn
-            (setf depth (1+ head))
-            (setf title (subseq line (1+ depth)))
-            (parse-heading obj doc))
-          (parse (make-instance 'section :body line)
-                 doc)))))
+      (cond ((char= #\space (aref line 0))
+             (setf title (subseq line 1))
+             (parse-heading obj doc))
+            (head
+             (setf depth (1+ (1+ head)))
+             (setf title (subseq line depth))
+             (parse-heading obj doc))
+            (t (parse (make-instance 'section :body line)
+                      doc))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
