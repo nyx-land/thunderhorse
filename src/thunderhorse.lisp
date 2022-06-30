@@ -114,12 +114,15 @@
         do (parse-lesser p doc)))
 
 (defun heading-conditions (stream c n h)
-  (or (and (char= c #\newline)
+  (cond ((and (char= c #\newline)
            (char= n #\*)
            (char= h #\space))
-      (and (= 1 (file-position stream))
-           (char= c #\*)
-           (char= n #\space))))
+         t)
+        ((and (= 1 (file-position stream))
+              (char= c #\*)
+              (char= n #\space))
+         (unread-char c stream)
+         t)))
 
 (defmethod parse ((obj section) (doc doc-raw))
   (with-slots (parent body) obj
