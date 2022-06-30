@@ -115,8 +115,8 @@
 
 (defun heading-conditions (stream c n h)
   (cond ((and (char= c #\newline)
-           (char= n #\*)
-           (char= h #\space))
+              (char= n #\*)
+              (char= h #\space))
          t)
         ((and (= 1 (file-position stream))
               (char= c #\*)
