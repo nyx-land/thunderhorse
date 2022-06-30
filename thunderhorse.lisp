@@ -102,9 +102,36 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; lesser element methods
 
-(defmethod parse ((obj section) (doc doc-raw))
-  (princ (read-line (str doc) nil :eof)))
+(defgeneric parse-lesser (obj doc)
+  (:documentation "Special parser for lesser elements"))
 
+(defmethod parse-lesser ((obj paragraph) (doc doc-raw))
+  (princ obj))
+
+(defmethod parse-lesser ((obj section) (doc doc-raw))
+  (pg-split obj (vector-pop (body obj)))
+  (loop for p across (body obj)
+        do (parse-lesser p doc)))
+
+(defun heading-conditions (stream c n h)
+  (or (and (char= c #\newline)
+           (char= n #\*)
+           (char= h #\space))
+      (and (= 1 (file-position stream))
+           (char= c #\*)
+           (char= n #\space))))
+
+(defmethod parse ((obj section) (doc doc-raw))
+  (with-slots (parent body) obj
+    (loop for c = (read-char (str doc) nil :eof)
+          for n = (peek-char nil (str doc) nil :eof)
+          for h = (peek-nth-chars 2 (str doc) nil :eof)
+          until (or (eq c :eof)
+                    (heading-conditions (str doc) c n h))
+          collect c into sections
+          finally (vector-push-extend (concatenate 'string sections)
+                                      (body obj))
+                  (parse-lesser obj doc))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
