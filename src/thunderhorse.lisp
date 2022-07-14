@@ -291,9 +291,23 @@
                    :str stream))))
 
 (defmethod parse ((obj pathname) doc)
+  "Handle files and directories, recursively parsing every org file
+in the case of directories."
   (declare (ignore doc))
-  (with-open-file (stream obj :element-type 'character)
-    (parse stream (make-instance
-                   'doc-raw
-                   :file obj
-                   :str stream))))
+  (when (probe-file obj)
+    (cond ((null (and (pathname-type obj)
+                      (pathname-name obj)))
+           (parse (make-pathname :directory `(,@(pathname-directory obj)
+                                              :wild-inferiors)
+                                 :name :wild
+                                 :type "org")
+                  nil))
+          ((eq (pathname-name obj) :wild)
+           (map 'list (lambda (x) (parse x nil))
+                (directory obj)))
+          ((equalp (pathname-type obj) "org")
+           (with-open-file (stream obj :element-type 'character)
+             (parse stream (make-instance
+                            'doc-raw
+                            :file obj
+                            :str stream)))))))
