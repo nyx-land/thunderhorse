@@ -10,3 +10,10 @@
     (write-string "#<PARAGRAPH " stream)
     (write-string preview stream)
     (write-string " >" stream)))
+
+(defmethod print-object ((object markup) stream)
+  (if (slot-boundp object 'text)
+      (format stream "#<~a ~a>"
+              (class-name (class-of object))
+              (text object))
+      (print-unreadable-object (object stream :type t :identity t))))
