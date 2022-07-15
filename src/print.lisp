@@ -7,9 +7,11 @@
                               (subseq (body object) 0 200)
                               (length (body object))))
         (setf preview (format nil "~a" (body object))))
-    (write-string "#<PARAGRAPH " stream)
-    (write-string preview stream)
-    (write-string " >" stream)))
+    (if (zerop (length (body object)))
+        (print-unreadable-object (object stream :type t :identity t))
+        (format stream "#<~a ~a>"
+                (class-name (class-of object))
+                preview))))
 
 (defmethod print-object ((object markup) stream)
   (if (slot-boundp object 'text)
