@@ -136,6 +136,11 @@
 (defgeneric parse-lesser (obj doc)
   (:documentation "Special parser for lesser elements"))
 
+(defmethod parse-lesser ((obj paragraph) (doc doc-raw))
+  (parse-markup (body obj) obj))
+
+;; TODO: split this properly for more than just paragraphs
+;; TODO: make methods to handle each lesser element after splitting
 (defmethod parse-lesser ((obj section) (doc doc-raw))
   (pg-split obj (vector-pop (body obj)))
   (loop for p across (body obj)
