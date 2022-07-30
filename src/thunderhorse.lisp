@@ -131,6 +131,52 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; markup methods
+
+(defgeneric parse-markup (obj pg)
+  (:documentation "Special parser for markup elements"))
+
+(defun make-markup-obj (obj body pos1 pos2)
+  (cons (make-instance
+         obj :text (subseq body (1+ pos1) pos2))
+        (list pos1 pos2)))
+
+;; TODO: kinda icky and hacky
+(defun markup-collect (tok str &key (start 0) (results nil))
+  (let* ((c (car tok))
+         (obj (cdr tok))
+         (pos1 (position c str :start start))
+         (pos2 (if pos1 (position c str :start (1+ pos1))
+                   nil)))
+    (if (and pos1 pos2)
+        (markup-collect
+         tok str :start (1+ pos2)
+                 :results (push (make-markup-obj obj str pos1 pos2)
+                                results))
+        (reverse results))))
+
+(defmethod parse-markup ((tok tokens) (str string))
+  (with-slots (chars) tok
+    (loop for c in chars
+          collect (markup-collect c str) into toks
+          finally (return (reverse (flatten-1 (remove nil toks)))))))
+
+(defmethod parse-markup ((body string) (pg paragraph))
+  (let ((toks (parse-markup *markup-tokens* body))
+        (prev nil)
+        (results (make-array 0 :adjustable t :fill-pointer 0)))
+    (when toks
+      (loop for tok in toks
+            for i = 0 then (1+ (cadr prev))
+            do (vector-push-extend (subseq body i (cadr tok)) results)
+               (vector-push-extend (car tok) results)
+               (setf prev (cdr tok))
+            finally (vector-push-extend (subseq body (1+ (cadr prev))) results))
+      (setf (body pg) (remove 0 results)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; lesser element methods
 
 (defgeneric parse-lesser (obj doc)
