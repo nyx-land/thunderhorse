@@ -32,8 +32,8 @@ as long as it works since GNU Emacs doesn't set a very high bar to begin with.
     - [ ] Lists
     - [ ] Basic blocks
   - [-] Lesser Elements
-    - [-] Paragraphs
-    - [ ] Inline text markup (bold, italics, etc)
+    - [X] Paragraphs
+    - [X] Inline text markup (bold, italics, etc)
     - [ ] Links
     - [ ] Comments
 - [-] Orgdown-?2 [33%]
@@ -49,7 +49,8 @@ as long as it works since GNU Emacs doesn't set a very high bar to begin with.
 ** Naming
 
 Idk Org-Mode's mascot is a unicorn and the only sort of related thing I could
-think of is the Dethklok song. I make no promises of this being Lightning Fast™.
+think of is the Dethklok song. Also, =CL-ORG-MODE= was already taken, twice. I
+make no promises of this being Lightning Fast™.
 
 ** License
 
