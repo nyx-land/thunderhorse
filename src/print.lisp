@@ -1,5 +1,11 @@
 (in-package :thunderhorse)
 
+(defmethod print-object ((object heading) stream)
+  (if (slot-boundp object 'title)
+      (format stream "#<~a ~s>"
+              (class-name (class-of object))
+              (title object))))
+
 (defmethod print-object ((object section) stream)
   (let ((preview nil))
     (if (> (length (body object)) 200)
