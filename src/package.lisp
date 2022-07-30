@@ -1,5 +1,5 @@
 (defpackage #:thunderhorse
-  (:nickname #:trhs)
+  (:nicknames #:org)
   (:use :cl)
   (:export :parse))
 
