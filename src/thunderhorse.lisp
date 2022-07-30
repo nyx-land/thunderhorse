@@ -131,9 +131,6 @@
 (defgeneric parse-lesser (obj doc)
   (:documentation "Special parser for lesser elements"))
 
-(defmethod parse-lesser ((obj paragraph) (doc doc-raw))
-  (princ obj))
-
 (defmethod parse-lesser ((obj section) (doc doc-raw))
   (pg-split obj (vector-pop (body obj)))
   (loop for p across (body obj)
