@@ -25,3 +25,15 @@
                            :body string
                            :parent (parent section))
                           (body section)))))
+
+;; TODO: icky and hacky
+(defun flatten-1 (ls &key (remaining nil) (results nil))
+  (let ((ls (remove nil ls)))
+    (if (null ls)
+        results
+        (if (listp (car ls))
+            (flatten-1 (car ls)
+                       :remaining (push (cdr ls) remaining)
+                       :results results)
+            (flatten-1
+             remaining :results (push ls results))))))
