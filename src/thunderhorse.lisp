@@ -117,8 +117,13 @@
 
 (defparameter *markup-tokens*
   (make-instance
-   'tokens :chars '((#\* . bold)
-                    (#\/ . italic))))
+   'tokens
+   :chars '((#\* . bold)
+            (#\/ . italic)
+            (#\_ . underline)
+            (#\= . verbatim)
+            (#\~ . code)
+            (#\+ . strikethrough))))
 
 (defgeneric parse (obj doc)
   (:documentation "The parser method"))
