@@ -3,6 +3,6 @@
   :components ((:module "src"
                 :components
                 ((:file "package")
+                 (:file "thunderhorse")
                  (:file "util")
-                 (:file "print")
-                 (:file "thunderhorse")))))
+                 (:file "print")))))
