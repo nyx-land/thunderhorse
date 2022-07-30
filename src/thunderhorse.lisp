@@ -94,6 +94,32 @@
   ((body
     :initform (make-string 0))))
 
+(defclass markup ()
+  ((text :initarg :text :accessor text)))
+
+(defclass bold (markup) ())
+
+(defclass italic (markup) ())
+
+(defclass underline (markup) ())
+
+(defclass verbatim (markup) ())
+
+(defclass code (markup) ())
+
+(defclass strikethrough (markup) ())
+
+(defclass link (inline)
+  ((href :initarg :href :accessor href)))
+
+(defclass tokens ()
+  ((chars :initarg :chars :accessor chars)))
+
+(defparameter *markup-tokens*
+  (make-instance
+   'tokens :chars '((#\* . bold)
+                    (#\/ . italic))))
+
 (defgeneric parse (obj doc)
   (:documentation "The parser method"))
 
