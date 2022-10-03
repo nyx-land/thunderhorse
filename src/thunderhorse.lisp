@@ -152,10 +152,10 @@
   (when (slot-boundp el 'parent)
     (vector-push-extend el (sections (parent el)))))
 
-(defmethod initialize-instance :after ((obj greater-element))
+(defmethod initialize-instance :after ((obj greater-element) &key)
   (finalize-element obj))
 
-(defmethod initialize-instance :after ((obj lesser-element))
+(defmethod initialize-instance :after ((obj lesser-element) &key)
   (finalize-element obj))
 
 (defgeneric parse (obj doc)
