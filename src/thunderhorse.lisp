@@ -221,9 +221,115 @@
 ;; TODO: split this properly for more than just paragraphs
 ;; TODO: make methods to handle each lesser element after splitting
 (defmethod parse-lesser ((obj section) (doc doc-raw))
-  (pg-split obj (vector-pop (body obj)))
-  (loop for p across (body obj)
-        do (parse-lesser p doc)))
+  (with-slots (body) obj
+    (let ((line (string-trim '(#\space) body)))
+      (cond ((equalp (subseq line 0 8)
+                     "#+begin_")
+             (parse-lesser (copy-sec block-element)
+                           obj))
+            ((equalp (subseq line 0 2)
+                     "# ")
+             t)
+            ((t (parse-lesser (copy-sec paragraph))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; greater element methods
+
+(defgeneric parse-greater (obj doc)
+  (:documentation "Special parser for greater elements."))
+
+(defmethod parse-greater :after ((obj greater-element) doc)
+  (with-slots (parent) obj
+    (vector-push-extend obj (body parent))))
+
+(defmethod parse-greater ((obj unordered-list) (strings list))
+  (let* ((first-el (first strings))
+         (start-el (position #\- first-el))
+         (content (subseq first-el (+ 2 start-el))))
+    (with-slots (depth body) obj
+      (cond ((> start-el depth)
+             (parse-greater
+              (make-instance
+               'unordered-list
+               :parent obj
+               :body content
+               :depth start-el)
+              (cdr strings)))
+            ((= start-el depth)
+             (vector-push-extend content body)
+             (parse-greater obj (cdr strings)))
+            (t t)))))
+
+(defmethod parse-greater ((obj drawer) (string string))
+  (with-slots (entries) obj
+    (let ((lines (split-by-char string #\newline)))
+      (loop for x in lines
+            for delim = (position #\: x)
+            for k = (intern (subseq x 0 delim) :keyword)
+            do (setf (gethash k entries)
+                     (string-trim ": " (subseq x delim)))))))
+
+(defmethod parse-greater ((obj block-element) (sec section))
+  (with-slots (body block-type meta) obj
+    (let* ((block-index (cons 8 (position #\space body)))
+           (meta-index (cons (1+ (car block-type))
+                             (position #\newline :start (1+ (car block-type))))))
+      (setf block-type (subseq body (car block-index) (cdr block-index)))
+      (setf meta (subseq body (car meta-index) (cdr meta-index)))
+      (loop for x across (body sec)
+            for pos = 0 then (incf pos)
+            until (search (format nil "~%#+end_~a" meta) x)
+            do (vector-push-extend x body)
+            finally (vector-push-extend x body)
+                    (setf (body sec) (subseq (body sec) pos))))))
+
+(defmethod parse-greater ((obj section) (doc doc-raw))
+  (with-slots (body parent) obj
+    (loop for x across body
+          for line = (string-trim '(#\space #\newline) body)
+          do (cond ((equalp (subseq line 0 8)
+                            "#+begin_")
+                    (parse-greater (copy-sec block-element)
+                                   obj))
+                   ((and (search ":PROPERTIES:" line)
+                         (search ":END:" line))
+                    (parse-greater
+                     (make-instance
+                      'drawer
+                      :parent parent)
+                     (subseq line
+                             (position (1+ #\newline) line)
+                             (position #\newline line :from-end t))))
+                   ((equalp (subseq line 0 2)
+                            "- ")
+                    (parse-greater
+                     (make-instance
+                      'unordered-list
+                      :parent parent)
+                     (split-by-char string #\newline)))
+                   ((and (parse-integer (aref line 0) :junk-allowed t)
+                         (char= (aref line 1) #\.))
+                    (parse-greater (copy-sec ordered-list)
+                                   obj))
+                   ((equalp (aref line 0) "|")
+                    (parse-greater (copy-sec table)
+                                   obj))
+                   (t (parse-lesser sec doc))))))
+
+(defun section-split (str sec
+                      &key (results (make-array 0 :adjustable t :fill-pointer 0)))
+  (let ((split (search (format nil "~%~%") str)))
+    (if split
+        (progn
+          (vector-push-extend (subseq str 0 split) results)
+          (section-split
+           (subseq str (1+ (1+ split))) sec
+           :results results))
+        (progn
+          (vector-push-extend (subseq str 0) results)
+          (setf (body sec) (remove 0 results))))))
 
 (defun heading-conditions (stream c n h)
   (cond ((and (char= c #\newline)
