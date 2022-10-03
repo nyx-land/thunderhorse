@@ -25,3 +25,12 @@
               (class-name (class-of object))
               (text object))
       (print-unreadable-object (object stream :type t :identity t))))
+
+(defmethod print-object ((object link) stream)
+  (if (and (slot-boundp object 'text)
+           (slot-boundp object 'href))
+      (format stream "#<~a ~s (~a)>"
+              (class-name (class-of object))
+              (text object)
+              (href object))
+      (print-unreadable-object (object stream :type t :identity t))))
