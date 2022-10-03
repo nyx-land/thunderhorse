@@ -246,21 +246,8 @@
           collect c into sections
           finally (vector-push-extend (concatenate 'string sections)
                                       (body obj))
-                  (parse-lesser obj doc))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; greater element methods
-
-(defmethod parse ((obj drawer) (doc doc-raw))
-  (loop for line = (read-line (str doc) nil :eof)
-        for ksearch = (search ": " line)
-        for k = (subseq line 0 ksearch)
-        for v = (subseq line (1+ ksearch))
-        until (search ":END:" line :test #'char-equal)
-        collect (cons k v) into e
-        finally (push e (entries obj))))
+                  (section-split (body obj) obj)
+                  (parse-greater obj doc))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
