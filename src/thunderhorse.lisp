@@ -42,15 +42,6 @@
   ((priority
     :initarg :priority :accessor priority)))
 
-(defclass section ()
-  ((body
-    :initarg :body
-    :initform (make-array 0 :adjustable t :fill-pointer 0)
-    :accessor body)
-   (parent
-    :initarg :parent
-    :accessor parent)))
-
 (defclass heading ()
   ((depth
     :initarg :depth
@@ -75,22 +66,53 @@
     :initarg :children
     :initform (make-array 0 :adjustable t :fill-pointer 0)
     :accessor children)
-   (paragraphs
-    :initarg :paragraphs
-    :initform nil
-    :accessor paragraphs)
+   (sections
+    :initarg :sections
+    :initform (make-array 0 :adjustable t :fill-pointer 0)
+    :accessor sections)
    (tags
     :initarg :tags
     :initform nil
     :accessor tags)))
 
-(defclass drawer ()
-  ((entries :initarg :entries :initform nil :accessor entries)
-   (parent  :initarg :parent :accessor parent)))
+(defclass section ()
+  ((body
+    :initarg :body
+    :initform (make-array 0 :adjustable t :fill-pointer 0)
+    :accessor body)
+   (parent
+    :initarg :parent
+    :accessor parent)))
+
+(defclass greater-element (section) ())
+
+(defclass lesser-element (section) ())
+
+(defclass drawer (greater-element)
+  ((entries :initarg :entries :accessor entries)
+   (parent  :initarg :parent  :accessor parent))
+  (:default-initargs
+   :entries (make-hash-table)))
 
 (defclass propdrawer (drawer) ())
 
-(defclass paragraph (section)
+(defclass block-element (greater-element)
+  ((block-type :initarg :block-type :accessor block-type)
+   (meta       :initarg :meta       :accessor meta)))
+
+(defclass list-element (greater-element)
+  ((depth :initarg :depth :accessor depth))
+  (:default-initargs
+   :depth 0
+   :body (make-array 0 :adjustable t :fill-pointer 0)))
+
+(defclass unordered-list (list-element) ())
+
+(defclass ordered-list (list-element) ())
+
+(defclass table (greater-element) ())
+
+(defclass paragraph (lesser-element)
   ((body
     :initform (make-string 0))))
 
