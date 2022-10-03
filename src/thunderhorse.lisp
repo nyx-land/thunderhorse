@@ -131,7 +131,7 @@
 
 (defclass strikethrough (markup) ())
 
-(defclass link (inline)
+(defclass link (markup)
   ((href :initarg :href :accessor href)))
 
 (defclass tokens ()
@@ -159,7 +159,9 @@
   (finalize-element obj))
 
 (defgeneric parse (obj doc)
-  (:documentation "The parser method"))
+  (:documentation "The main parser method. At each level of hierarchy in the
+document, a `PARSE-~CLASS' should be invoked to do specialized parsing for
+each class of org-mode objects."))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
