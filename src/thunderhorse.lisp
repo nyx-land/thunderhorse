@@ -147,6 +147,17 @@
             (#\~ . code)
             (#\+ . strikethrough))))
 
+(defun finalize-element (el)
+  "Finalize positioning the element within the AST of the document."
+  (when (slot-boundp el 'parent)
+    (vector-push-extend el (sections (parent el)))))
+
+(defmethod initialize-instance :after ((obj greater-element))
+  (finalize-element obj))
+
+(defmethod initialize-instance :after ((obj lesser-element))
+  (finalize-element obj))
+
 (defgeneric parse (obj doc)
   (:documentation "The parser method"))
 
