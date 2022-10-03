@@ -1,5 +1,12 @@
 (in-package :thunderhorse)
 
+(defmacro copy-sec (new)
+  `(with-slots (body parent) obj
+     (make-instance
+      ',new
+      :body body
+      :parent parent)))
+
 (defun peek-nth-chars (num &optional (stream *standard-input*)
                              (eof-error t) eof-value)
   (let* ((chars (loop repeat num
@@ -25,6 +32,12 @@
                            :body string
                            :parent (parent section))
                           (body section)))))
+
+(defun split-by-char (string char)
+  (loop for i = 0 then (1+ j)
+        as j = (position char string :start i)
+        collect (subseq string i j)
+        while j))
 
 ;; TODO: icky and hacky
 (defun flatten-1 (ls &key (remaining nil) (results nil))
