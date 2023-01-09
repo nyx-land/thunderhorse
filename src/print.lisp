@@ -1,36 +1,31 @@
 (in-package :thunderhorse)
 
 (defmethod print-object ((object heading) stream)
-  (if (slot-boundp object 'title)
-      (format stream "#<~a ~s>"
-              (class-name (class-of object))
-              (title object))))
+  (print-unreadable-object (object stream :type t :identity t)
+    (when (slot-boundp object 'title)
+      (format stream "~a" (title object)))))
 
 (defmethod print-object ((object section) stream)
-  (let ((preview nil))
-    (if (> (length (body object)) 200)
-        (setf preview (format nil "~a...[truncated string of ~a length]"
-                              (subseq (body object) 0 200)
-                              (length (body object))))
-        (setf preview (format nil "~a" (body object))))
-    (if (zerop (length (body object)))
-        (print-unreadable-object (object stream :type t :identity t))
-        (format stream "#<~a ~s>"
-                (class-name (class-of object))
-                preview))))
+  (print-unreadable-object (object stream :type t :identity t)
+    (when (and (slot-boundp object 'body)
+               (not (zerop (length (body object)))))
+      (let ((preview nil))
+        (if (> (length (body object)) 200)
+            (setf preview (format nil "~a...[truncated string of ~a length]"
+                                  (subseq (body object) 0 200)
+                                  (length (body object))))
+            (setf preview (format nil "~a" (body object))))
+        (format stream "~s" preview)))))
 
 (defmethod print-object ((object markup) stream)
-  (if (slot-boundp object 'text)
-      (format stream "#<~a ~s>"
-              (class-name (class-of object))
-              (text object))
-      (print-unreadable-object (object stream :type t :identity t))))
+  (print-unreadable-object (object stream :type t :identity t)
+    (when (slot-boundp object 'text)
+      (format stream "~a" (text object)))))
 
 (defmethod print-object ((object link) stream)
-  (if (and (slot-boundp object 'text)
-           (slot-boundp object 'href))
-      (format stream "#<~a ~s (~a)>"
-              (class-name (class-of object))
+  (print-unreadable-object (object stream :type t :identity t)
+    (when (and (slot-boundp object 'text)
+               (slot-boundp object 'href))
+      (format stream "~a (~a)"
               (text object)
-              (href object))
-      (print-unreadable-object (object stream :type t :identity t))))
+              (href object)))))
